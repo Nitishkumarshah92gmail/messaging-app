@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Virtuoso } from "react-virtuoso"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import { CallModal } from "@/components/chat/call-modal"
-import EmojiPicker from "emoji-picker-react"
+import EmojiPicker, { Theme } from "emoji-picker-react"
 import { useTheme } from "next-themes"
 
 export function ChatWindow() {
@@ -126,7 +126,7 @@ export function ChatWindow() {
           <div className="absolute bottom-24 left-4 z-50 shadow-2xl glass rounded-2xl overflow-hidden">
             <EmojiPicker 
               onEmojiClick={handleEmojiClick}
-              theme={theme === 'dark' ? 'dark' : 'light'}
+              theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
             />
           </div>
         )}

@@ -124,11 +124,11 @@ export function Sidebar() {
                 <div className="flex justify-between items-baseline mb-1">
                   <span className="font-medium text-lg truncate drop-shadow-sm">{chat.user.name}</span>
                   <span className="text-xs opacity-70">
-                    {new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {chat.lastMessage?.timestamp ? new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm truncate opacity-80">{chat.lastMessage.text}</span>
+                  <span className="text-sm truncate opacity-80">{chat.lastMessage?.text || ''}</span>
                   {chat.unreadCount > 0 && (
                     <span className="bg-white text-black dark:bg-black dark:text-white text-xs font-bold px-2 py-0.5 rounded-full ml-2 neu-flat">
                       {chat.unreadCount}
