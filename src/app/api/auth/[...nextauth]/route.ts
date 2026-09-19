@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
 
 const handler = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -12,10 +15,12 @@ const handler = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    async session({ session, token }) {
+    async session({ session, user }) {
       if (session.user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).id = token.sub;
+        (session.user as any).id = user.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any).avatar = user.image;
       }
       return session;
     },

@@ -1,27 +1,89 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useChatStore } from "@/store/chat-store"
-import { DUMMY_CHATS, DUMMY_MESSAGES } from "@/lib/dummy-data"
 import { Search, MoreVertical, Phone, Video, Smile, Paperclip, Mic, Send, Image as ImageIcon, FileText, Camera } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Virtuoso } from "react-virtuoso"
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import { CallModal } from "@/components/chat/call-modal"
 import EmojiPicker, { Theme } from "emoji-picker-react"
 import { useTheme } from "next-themes"
+import { useSession } from "next-auth/react"
+import io from "socket.io-client"
+
+// In a real app, this should be an environment variable.
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://messaging-app-backend-n5as.onrender.com";
 
 export function ChatWindow() {
-  const { activeChatId, setActiveChatId } = useChatStore()
+  const { activeChatId, setActiveChatId, users } = useChatStore()
   const [inputText, setInputText] = useState("")
   const [showEmoji, setShowEmoji] = useState(false)
   const [showAttach, setShowAttach] = useState(false)
   const [callState, setCallState] = useState<{type: 'audio'|'video', open: boolean} | null>(null)
+  
+  // Real Data State
+  const { data: session } = useSession()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [messages, setMessages] = useState<any[]>([])
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const socketRef = useRef<any>(null)
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
   const { theme } = useTheme()
   
-  const activeChat = DUMMY_CHATS.find((c) => c.id === activeChatId)
-  const messages = activeChatId ? (DUMMY_MESSAGES[activeChatId] || []) : []
+  const activeChatUser = users.find((c) => c.id === activeChatId)
 
+  // 1. Initialize Socket.IO connection
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentUserId = (session?.user as any)?.id;
+    if (!currentUserId) return;
+
+    socketRef.current = io(SOCKET_URL);
+    
+    socketRef.current.on('connect', () => {
+      console.log("Connected to socket server");
+      socketRef.current.emit('setup', currentUserId);
+    });
+
+    socketRef.current.on('receive_message', (newMessage: any) => {
+      setMessages((prev) => [...prev, newMessage]);
+      setTimeout(() => virtuosoRef.current?.scrollToIndex({ index: 'LAST', align: 'end' }), 100);
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+    }
+  }, [session]);
+
+  // 2. Fetch Messages when Active Chat Changes
+  useEffect(() => {
+    if (!activeChatId) return;
+
+    const fetchMessages = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/messages?userId=${activeChatId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentChatId(data.chatId);
+          setMessages(data.messages);
+          if (socketRef.current) {
+            socketRef.current.emit('join_chat', data.chatId);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [activeChatId]);
+
+  // 3. Handle external clicks for popups
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -32,7 +94,7 @@ export function ChatWindow() {
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  if (!activeChatId || !activeChat) {
+  if (!activeChatId || !activeChatUser) {
     return (
       <div className="hidden md:flex flex-1 items-center justify-center flex-col bg-[#222e35] relative border-b-[6px] border-[var(--color-wa-green)]">
         <div className="text-center">
@@ -46,9 +108,34 @@ export function ChatWindow() {
     )
   }
 
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !currentChatId) return;
+    const text = inputText;
+    setInputText("");
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: currentChatId, text })
+      });
+      if (res.ok) {
+        const newMessage = await res.json();
+        setMessages((prev) => [...prev, newMessage]);
+        if (socketRef.current) {
+          socketRef.current.emit('send_message', newMessage);
+        }
+        setTimeout(() => virtuosoRef.current?.scrollToIndex({ index: 'LAST', align: 'end' }), 100);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const renderMessage = (index: number) => {
     const msg = messages[index]
-    const isMe = msg.senderId === "me"
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isMe = msg.senderId === (session?.user as any)?.id;
     
     return (
       <MessageBubble 
@@ -74,14 +161,14 @@ export function ChatWindow() {
       <div className="h-[59px] flex-shrink-0 bg-[var(--color-wa-panel)] flex items-center justify-between px-4 z-10 border-l border-[var(--color-wa-border)]">
         <div className="flex items-center">
           <img
-            src={activeChat.user.avatar}
-            alt={activeChat.user.name}
+            src={activeChatUser.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.name}`}
+            alt={activeChatUser.name}
             className="w-10 h-10 rounded-full mr-4 cursor-pointer object-cover"
           />
           <div className="cursor-pointer flex flex-col justify-center">
-            <span className="font-medium text-base text-[var(--color-wa-text)] leading-tight">{activeChat.user.name}</span>
+            <span className="font-medium text-base text-[var(--color-wa-text)] leading-tight">{activeChatUser.name}</span>
             <span className="text-xs text-[var(--color-wa-text-muted)]">
-              {activeChat.user.online ? "online" : activeChat.user.lastSeen || "offline"}
+              {activeChatUser.isOnline ? "online" : activeChatUser.lastSeen ? `last seen ${new Date(activeChatUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}` : "offline"}
             </span>
           </div>
         </div>
@@ -99,19 +186,24 @@ export function ChatWindow() {
           type={callState.type} 
           isOpen={callState.open} 
           onClose={() => setCallState(null)} 
-          callerName={activeChat.user.name} 
+          callerName={activeChatUser.name} 
         />
       )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden relative px-[5%] py-4 z-0 bg-[#0b141a]">
-        <Virtuoso
-          data={messages}
-          itemContent={renderMessage}
-          initialTopMostItemIndex={messages.length - 1}
-          className="h-full scroll-smooth"
-          alignToBottom
-        />
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center text-[var(--color-wa-text-muted)]">Loading messages...</div>
+        ) : (
+          <Virtuoso
+            ref={virtuosoRef}
+            data={messages}
+            itemContent={renderMessage}
+            initialTopMostItemIndex={messages.length > 0 ? messages.length - 1 : 0}
+            className="h-full scroll-smooth"
+            alignToBottom
+          />
+        )}
       </div>
 
       {/* Footer / Input Area */}
@@ -165,13 +257,22 @@ export function ChatWindow() {
             className="w-full bg-[var(--color-wa-input)] rounded-lg px-4 py-2.5 text-[15px] text-[var(--color-wa-text)] outline-none placeholder:text-[var(--color-wa-text-muted)]"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             onFocus={() => { setShowEmoji(false); setShowAttach(false); }}
           />
         </div>
         
         <div className="flex-shrink-0">
           {inputText.trim() ? (
-            <button className="p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors">
+            <button 
+              className="p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors"
+              onClick={handleSendMessage}
+            >
               <Send size={24} />
             </button>
           ) : (

@@ -1,19 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, MoreVertical, MessageSquarePlus, ArrowLeft, Check, Users } from "lucide-react"
-import { CURRENT_USER, DUMMY_CHATS } from "@/lib/dummy-data"
-import { useChatStore } from "@/store/chat-store"
+import { useSession } from "next-auth/react"
+import { useChatStore, User } from "@/store/chat-store"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { Virtuoso } from "react-virtuoso"
 
 export function Sidebar() {
-  const { activeChatId, setActiveChatId } = useChatStore()
+  const { activeChatId, setActiveChatId, users, setUsers } = useChatStore()
   const { setTheme, theme } = useTheme()
+  const { data: session } = useSession()
   const [filter, setFilter] = useState<"all" | "unread" | "groups">("all")
   const [showNewGroup, setShowNewGroup] = useState(false)
   const [groupName, setGroupName] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await fetch("/api/users");
+        if (res.ok) {
+          const data = await res.json();
+          setUsers(data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchUsers();
+  }, [setUsers])
+
+  const currentUser = session?.user;
 
   if (showNewGroup) {
     return (
@@ -61,8 +82,9 @@ export function Sidebar() {
       {/* Header */}
       <div className="h-[59px] flex-shrink-0 bg-[var(--color-wa-panel)] flex items-center justify-between px-4 z-10">
         <img
-          src={CURRENT_USER.avatar}
-          alt={CURRENT_USER.name}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          src={(currentUser as any)?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
+          alt={currentUser?.name || "User"}
           className="w-10 h-10 rounded-full cursor-pointer"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title="Toggle Theme"
@@ -94,37 +116,40 @@ export function Sidebar() {
 
       {/* Chat List */}
       <div className="flex-1 overflow-hidden relative">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full text-[var(--color-wa-text-muted)] text-sm">Loading users...</div>
+        ) : users.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-[var(--color-wa-text-muted)] text-sm text-center px-4">
+            No other users have logged in yet.<br/>Waiting for someone to join...
+          </div>
+        ) : (
         <Virtuoso
-          data={DUMMY_CHATS}
-          itemContent={(index, chat) => (
+          data={users}
+          itemContent={(index, user) => (
             <div 
               className={cn(
                 "flex items-center px-3 cursor-pointer transition-colors",
-                activeChatId === chat.id ? "bg-[var(--color-wa-panel)]" : "hover:bg-[var(--color-wa-panel)]"
+                activeChatId === user.id ? "bg-[var(--color-wa-panel)]" : "hover:bg-[var(--color-wa-panel)]"
               )}
-              onClick={() => setActiveChatId(chat.id)}
+              onClick={() => setActiveChatId(user.id)}
             >
-              <img src={chat.user.avatar} alt="" className="w-12 h-12 rounded-full mr-3 object-cover" />
+              <img src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt="" className="w-12 h-12 rounded-full mr-3 object-cover" />
               <div className="flex-1 min-w-0 border-b border-[var(--color-wa-border)] py-3 pr-4">
                 <div className="flex justify-between items-baseline mb-0.5">
-                  <span className="text-base text-[var(--color-wa-text)] truncate">{chat.user.name}</span>
+                  <span className="text-base text-[var(--color-wa-text)] truncate">{user.name}</span>
                   <span className="text-xs text-[var(--color-wa-text-muted)]">
-                    {chat.lastMessage?.timestamp ? new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    {user.lastSeen ? new Date(user.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm truncate text-[var(--color-wa-text-muted)]">{chat.lastMessage?.text || ''}</span>
-                  {chat.unreadCount > 0 && (
-                    <span className="bg-[var(--color-wa-green)] text-[var(--color-wa-bg)] text-[11px] font-bold px-1.5 py-0.5 rounded-full ml-2">
-                      {chat.unreadCount}
-                    </span>
-                  )}
+                  <span className="text-sm truncate text-[var(--color-wa-text-muted)]">{user.about || "Available"}</span>
                 </div>
               </div>
             </div>
           )}
           className="h-full scroll-smooth"
         />
+        )}
       </div>
     </div>
   )
