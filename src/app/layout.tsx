@@ -27,8 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col text-[hsl(var(--foreground))] bg-transparent">
-        <div className="mesh-bg"></div>
+      <body className="h-screen w-full flex flex-col text-[var(--color-wa-text)] bg-[var(--color-wa-app-bg)] overflow-hidden">
         <AuthProvider>
           <ThemeProvider
           attribute="class"

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useChatStore } from "@/store/chat-store"
 import { DUMMY_CHATS, DUMMY_MESSAGES } from "@/lib/dummy-data"
-import { ArrowLeft, Search, MoreVertical, Phone, Video, Smile, Paperclip, Mic, Send, Image as ImageIcon, FileText, Camera } from "lucide-react"
+import { Search, MoreVertical, Phone, Video, Smile, Paperclip, Mic, Send, Image as ImageIcon, FileText, Camera } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Virtuoso } from "react-virtuoso"
 import { MessageBubble } from "@/components/chat/message-bubble"
@@ -34,12 +34,14 @@ export function ChatWindow() {
 
   if (!activeChatId || !activeChat) {
     return (
-      <div className="hidden md:flex flex-1 items-center justify-center flex-col text-[var(--foreground)] relative">
-        <div className="w-80 h-80 glass-panel rounded-full flex items-center justify-center mb-8 shadow-2xl relative z-10">
-           <span className="text-3xl font-light drop-shadow-lg">ChatApp Web</span>
+      <div className="hidden md:flex flex-1 items-center justify-center flex-col bg-[#222e35] relative border-b-[6px] border-[var(--color-wa-green)]">
+        <div className="text-center">
+          <h1 className="text-[32px] font-light text-[var(--color-wa-text)] mb-4">WhatsApp Web</h1>
+          <p className="text-sm text-[var(--color-wa-text-muted)] max-w-md mx-auto leading-relaxed">
+            Send and receive messages without keeping your phone online.<br/>
+            Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+          </p>
         </div>
-        <h1 className="text-4xl font-light mb-4 drop-shadow-lg z-10">Liquid Experience</h1>
-        <p className="text-lg opacity-80 z-10 font-medium">Send and receive messages in a futuristic UI.</p>
       </div>
     )
   }
@@ -65,36 +67,30 @@ export function ChatWindow() {
 
   return (
     <div className={cn(
-      "w-full h-full flex flex-col relative",
+      "w-full h-full flex flex-col relative bg-[var(--color-wa-app-bg)]",
       !activeChatId ? "hidden md:flex" : "flex flex-1"
     )}>
       {/* Header */}
-      <div className="h-[70px] flex-shrink-0 glass-panel flex items-center justify-between px-6 z-10 rounded-b-2xl mx-4 mt-2">
+      <div className="h-[59px] flex-shrink-0 bg-[var(--color-wa-panel)] flex items-center justify-between px-4 z-10 border-l border-[var(--color-wa-border)]">
         <div className="flex items-center">
-          <button 
-            className="md:hidden w-10 h-10 neu-button flex items-center justify-center mr-4"
-            onClick={() => setActiveChatId(null)}
-          >
-            <ArrowLeft size={20} />
-          </button>
           <img
             src={activeChat.user.avatar}
             alt={activeChat.user.name}
-            className="w-12 h-12 rounded-full mr-4 cursor-pointer neu-flat p-0.5 object-cover"
+            className="w-10 h-10 rounded-full mr-4 cursor-pointer object-cover"
           />
-          <div className="cursor-pointer">
-            <div className="font-semibold text-lg drop-shadow-sm">{activeChat.user.name}</div>
-            <div className="text-xs opacity-70 font-medium">
+          <div className="cursor-pointer flex flex-col justify-center">
+            <span className="font-medium text-base text-[var(--color-wa-text)] leading-tight">{activeChat.user.name}</span>
+            <span className="text-xs text-[var(--color-wa-text-muted)]">
               {activeChat.user.online ? "online" : activeChat.user.lastSeen || "offline"}
-            </div>
+            </span>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <button className="hidden sm:flex w-10 h-10 neu-button items-center justify-center" onClick={() => setCallState({type: 'video', open: true})}><Video size={18} /></button>
-          <button className="hidden sm:flex w-10 h-10 neu-button items-center justify-center" onClick={() => setCallState({type: 'audio', open: true})}><Phone size={18} /></button>
-          <div className="w-px h-6 bg-white/20 hidden sm:block mx-2"></div>
-          <button className="w-10 h-10 neu-button flex items-center justify-center"><Search size={18} /></button>
-          <button className="w-10 h-10 neu-button flex items-center justify-center"><MoreVertical size={18} /></button>
+        <div className="flex items-center space-x-2 text-[var(--color-wa-text-muted)]">
+          <button className="p-2 rounded-full hover:bg-white/10" onClick={() => setCallState({type: 'video', open: true})}><Video size={20} /></button>
+          <button className="p-2 rounded-full hover:bg-white/10" onClick={() => setCallState({type: 'audio', open: true})}><Phone size={20} /></button>
+          <div className="w-px h-6 bg-[var(--color-wa-border)] mx-2"></div>
+          <button className="p-2 rounded-full hover:bg-white/10"><Search size={20} /></button>
+          <button className="p-2 rounded-full hover:bg-white/10"><MoreVertical size={20} /></button>
         </div>
       </div>
 
@@ -108,7 +104,7 @@ export function ChatWindow() {
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-hidden relative px-4 py-4 z-0">
+      <div className="flex-1 overflow-hidden relative px-[5%] py-4 z-0 bg-[#0b141a]">
         <Virtuoso
           data={messages}
           itemContent={renderMessage}
@@ -119,11 +115,11 @@ export function ChatWindow() {
       </div>
 
       {/* Footer / Input Area */}
-      <div className="glass-panel mx-4 mb-4 rounded-2xl flex items-center px-4 py-3 z-20 gap-3">
+      <div className="bg-[var(--color-wa-panel)] flex items-center px-4 py-3 z-20 gap-2 min-h-[62px]">
         
         {/* Emoji Picker Popup */}
         {showEmoji && (
-          <div className="absolute bottom-24 left-4 z-50 shadow-2xl glass rounded-2xl overflow-hidden">
+          <div className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-lg overflow-hidden border border-[var(--color-wa-border)]">
             <EmojiPicker 
               onEmojiClick={handleEmojiClick}
               theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
@@ -133,40 +129,40 @@ export function ChatWindow() {
 
         {/* Attachment Menu Popup */}
         {showAttach && (
-          <div className="attach-menu absolute bottom-24 left-16 z-50 glass-panel rounded-2xl p-6 flex gap-8">
-             <div className="flex flex-col items-center gap-3 cursor-pointer group">
-               <div className="w-16 h-16 rounded-full neu-button flex items-center justify-center group-hover:-translate-y-2 transition-transform"><FileText size={28}/></div>
-               <span className="text-sm font-semibold">Document</span>
+          <div className="attach-menu absolute bottom-20 left-16 z-50 bg-[var(--color-wa-panel)] rounded-2xl p-4 flex gap-6 shadow-xl border border-[var(--color-wa-border)]">
+             <div className="flex flex-col items-center gap-2 cursor-pointer group">
+               <div className="w-14 h-14 rounded-full bg-indigo-500 flex items-center justify-center text-white"><FileText size={24}/></div>
+               <span className="text-xs text-[var(--color-wa-text)]">Document</span>
              </div>
-             <div className="flex flex-col items-center gap-3 cursor-pointer group">
-               <div className="w-16 h-16 rounded-full neu-button flex items-center justify-center group-hover:-translate-y-2 transition-transform"><ImageIcon size={28}/></div>
-               <span className="text-sm font-semibold">Photos</span>
+             <div className="flex flex-col items-center gap-2 cursor-pointer group">
+               <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white"><ImageIcon size={24}/></div>
+               <span className="text-xs text-[var(--color-wa-text)]">Photos</span>
              </div>
-             <div className="flex flex-col items-center gap-3 cursor-pointer group">
-               <div className="w-16 h-16 rounded-full neu-button flex items-center justify-center group-hover:-translate-y-2 transition-transform"><Camera size={28}/></div>
-               <span className="text-sm font-semibold">Camera</span>
+             <div className="flex flex-col items-center gap-2 cursor-pointer group">
+               <div className="w-14 h-14 rounded-full bg-pink-500 flex items-center justify-center text-white"><Camera size={24}/></div>
+               <span className="text-xs text-[var(--color-wa-text)]">Camera</span>
              </div>
           </div>
         )}
 
         <button 
-          className="emoji-btn w-12 h-12 neu-button flex items-center justify-center"
+          className="emoji-btn p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors"
           onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
         >
-          <Smile size={22} />
+          <Smile size={26} />
         </button>
         <button 
-          className="attach-btn w-12 h-12 neu-button flex items-center justify-center"
+          className="attach-btn p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors"
           onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }}
         >
-          <Paperclip size={22} className="rotate-45" />
+          <Paperclip size={24} />
         </button>
         
-        <div className="flex-1">
+        <div className="flex-1 mx-2">
           <input
             type="text"
-            placeholder="Type a message..."
-            className="w-full neu-input px-6 py-4 text-[16px] placeholder:opacity-50"
+            placeholder="Type a message"
+            className="w-full bg-[var(--color-wa-input)] rounded-lg px-4 py-2.5 text-[15px] text-[var(--color-wa-text)] outline-none placeholder:text-[var(--color-wa-text-muted)]"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onFocus={() => { setShowEmoji(false); setShowAttach(false); }}
@@ -175,11 +171,11 @@ export function ChatWindow() {
         
         <div className="flex-shrink-0">
           {inputText.trim() ? (
-            <button className="w-14 h-14 neu-button flex items-center justify-center text-blue-500">
+            <button className="p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors">
               <Send size={24} />
             </button>
           ) : (
-            <button className="w-14 h-14 neu-button flex items-center justify-center">
+            <button className="p-2 text-[var(--color-wa-text-muted)] hover:text-[var(--color-wa-text)] transition-colors">
               <Mic size={24} />
             </button>
           )}
