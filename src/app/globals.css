@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 20% 97%;
+    --foreground: 240 10% 10%;
+    
+    /* Neumorphism Base Colors */
+    --neu-base: #e0e5ec;
+    --neu-shadow-light: #ffffff;
+    --neu-shadow-dark: #a3b1c6;
+    
+    /* Glass Colors */
+    --glass-bg: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.7);
+    
+    /* Liquid Gradient Colors */
+    --color-1: #ffb7b2;
+    --color-2: #e2f0cb;
+    --color-3: #b5ead7;
+    --color-4: #c7ceea;
+
+    --wa-bubble-out: rgba(255, 255, 255, 0.8);
+    --wa-bubble-in: rgba(255, 255, 255, 0.5);
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 220 10% 90%;
+    
+    /* Neumorphism Base Colors */
+    --neu-base: #1a1e23;
+    --neu-shadow-light: #242a30;
+    --neu-shadow-dark: #101216;
+    
+    /* Glass Colors */
+    --glass-bg: rgba(20, 20, 20, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Liquid Gradient Colors */
+    --color-1: #240b36;
+    --color-2: #c31432;
+    --color-3: #240b36;
+    --color-4: #0f0c29;
+    
+    --wa-bubble-out: rgba(40, 45, 50, 0.8);
+    --wa-bubble-in: rgba(25, 30, 35, 0.5);
+  }
+}
+
+@layer components {
+  .mesh-bg {
+    background: linear-gradient(-45deg, var(--color-1), var(--color-2), var(--color-3), var(--color-4));
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    min-height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .neu-flat {
+    background: var(--neu-base);
+    box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+               -6px -6px 12px var(--neu-shadow-light);
+    border-radius: 12px;
+  }
+
+  .neu-pressed {
+    background: var(--neu-base);
+    box-shadow: inset 6px 6px 12px var(--neu-shadow-dark),
+               inset -6px -6px 12px var(--neu-shadow-light);
+    border-radius: 12px;
+  }
+
+  .neu-button {
+    background: var(--neu-base);
+    box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+               -6px -6px 12px var(--neu-shadow-light);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    color: var(--foreground);
+  }
+
+  .neu-button:active {
+    box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+               inset -4px -4px 8px var(--neu-shadow-light);
+  }
+
+  .neu-input {
+    background: var(--neu-base);
+    box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+               inset -4px -4px 8px var(--neu-shadow-light);
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    color: var(--foreground);
+  }
+}

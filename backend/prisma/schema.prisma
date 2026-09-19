@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  avatar    String?
+  about     String?  @default("Hey there! I am using ChatApp.")
+  lastSeen  DateTime @default(now())
+  isOnline  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chats          ChatMember[]
+  messages       Message[]
+  reactions      Reaction[]
+  starred        StarredMessage[]
+  statuses       Status[]
+  viewedStatuses StatusViewer[] @relation("StatusViewedBy")
+}
+
+model Chat {
+  id          String   @id @default(cuid())
+  isGroup     Boolean  @default(false)
+  name        String?
+  groupAvatar String?
+  description String?
+  inviteLink  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ChatMember[]
+  messages    Message[]
+}
+
+model ChatMember {
+  id          String   @id @default(cuid())
+  userId      String
+  chatId      String
+  role        String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  isPinned    Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  isMuted     Boolean  @default(false)
+  mutedUntil  DateTime?
+
+  user        User     @relation(fields: [userId], references: [id])
+  chat        Chat     @relation(fields: [chatId], references: [id])
+  
+  @@unique([userId, chatId])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  text        String?
+  status      String   @default("sent") // sent, delivered, read
+  
+  // Media fields
+  mediaUrl    String?
+  mediaType   String?  // image, video, document, audio
+  
+  // Actions
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  isForwarded Boolean  @default(false)
+  replyToId   String?
+  replyTo     Message? @relation("ReplyTo", fields: [replyToId], references: [id])
+  replies     Message[] @relation("ReplyTo")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  senderId    String
+  chatId      String
+
+  sender      User     @relation(fields: [senderId], references: [id])
+  chat        Chat     @relation(fields: [chatId], references: [id])
+  
+  reactions   Reaction[]
+  starredBy   StarredMessage[]
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
+  
+  @@unique([userId, messageId])
+}
+
+model StarredMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
+
+  @@unique([userId, messageId])
+}
+
+model Status {
+  id        String   @id @default(cuid())
+  userId    String
+  mediaUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id])
+  viewers   StatusViewer[]
+}
+
+model StatusViewer {
+  id        String   @id @default(cuid())
+  statusId  String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  status    Status   @relation(fields: [statusId], references: [id])
+  user      User     @relation("StatusViewedBy", fields: [userId], references: [id])
+
+  @@unique([statusId, userId])
+}
