@@ -5,6 +5,7 @@ import { Check, CheckCheck, ChevronDown, Reply, Star, Trash2, Edit2, CornerUpRig
 import { cn } from "@/lib/utils"
 
 interface MessageBubbleProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any
   isMe: boolean
   onReply: () => void

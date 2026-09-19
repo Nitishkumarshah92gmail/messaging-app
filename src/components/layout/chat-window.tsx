@@ -59,7 +59,7 @@ export function ChatWindow() {
     )
   }
 
-  const handleEmojiClick = (emojiData: any) => {
+  const handleEmojiClick = (emojiData: { emoji: string }) => {
     setInputText((prev) => prev + emojiData.emoji)
   }
 
