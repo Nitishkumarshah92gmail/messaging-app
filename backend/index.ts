@@ -3,7 +3,6 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
 
@@ -11,7 +10,6 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const prisma = new PrismaClient();
 
 // Setup CORS
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -37,13 +35,6 @@ async function startServer() {
     console.log('✅ Connected to Redis adapter for Socket.IO');
   } catch (err) {
     console.warn('⚠️ Could not connect to Redis. Falling back to in-memory adapter. Ensure Redis is running if you need scaling.');
-  }
-
-  try {
-    await prisma.$connect();
-    console.log('✅ Connected to PostgreSQL database');
-  } catch (err) {
-    console.warn('⚠️ Could not connect to PostgreSQL. Check your DATABASE_URL in backend/.env');
   }
 
   // Socket.IO Events
