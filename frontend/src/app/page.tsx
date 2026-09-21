@@ -51,13 +51,13 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
       <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
-      
+
       {activeChat ? (
         <ChatWindow user={user} conversationId={activeChat} />
       ) : (
         <div className="flex-1 flex flex-col bg-gray-950 h-full items-center justify-center">
           <div className="text-center text-gray-500 mb-auto mt-auto">
-            Welcome, {user.email}! Let's start chatting.
+            Welcome, {user.email}! Let us start chatting.
           </div>
         </div>
       )}

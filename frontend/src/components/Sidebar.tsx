@@ -10,15 +10,23 @@ interface SidebarProps {
   setActiveChat: (id: string) => void;
 }
 
-export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [view, setView] = useState<'chats' | 'users'>('chats');
+interface Conversation {
+  id: string;
+  name: string | null;
+  is_group: boolean;
+  last_message_at: string | null;
+}
 
-  useEffect(() => {
-    fetchConversations();
-    fetchAllUsers();
-  }, [user.id]);
+interface Profile {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+}
+
+export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
+  const [view, setView] = useState<'chats' | 'users'>('chats');
 
   const fetchConversations = async () => {
     const { data, error } = await supabase
@@ -31,7 +39,11 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
       .order('joined_at', { ascending: false });
 
     if (data && !error) {
-      setConversations(data.map(d => d.conversations));
+      setConversations(
+        data
+          .map(d => (Array.isArray(d.conversations) ? d.conversations[0] : d.conversations) as Conversation | null)
+          .filter((c): c is Conversation => !!c)
+      );
     }
   };
 
@@ -41,13 +53,18 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
       .from('profiles')
       .select('*')
       .neq('id', user.id);
-      
+
     if (data && !error) {
-      setAllUsers(data);
+      setAllUsers(data as Profile[]);
     }
   };
 
-  const startChat = async (otherUser: any) => {
+  useEffect(() => {
+    fetchConversations();
+    fetchAllUsers();
+  }, [user.id]);
+
+  const startChat = async (otherUser: Profile) => {
     // Basic implementation: for MVP, if RLS fails to insert the other user, we'll need an RPC.
     // For now, let's try to create a conversation and insert both users.
     const { data: newConv } = await supabase
@@ -73,13 +90,13 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <h2 className="font-bold text-lg tracking-tight">Messages</h2>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setView('chats')}
             className={`text-sm px-3 py-1 rounded-full transition-colors ${view === 'chats' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
           >
             Chats
           </button>
-          <button 
+          <button
             onClick={() => setView('users')}
             className={`text-sm px-3 py-1 rounded-full transition-colors ${view === 'users' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
           >
@@ -88,8 +105,8 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
         </div>
       </div>
       <div className="p-4">
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder={view === 'chats' ? "Search chats..." : "Search users..."}
           className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
         />
@@ -99,13 +116,12 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
           conversations.length === 0 ? (
             <p className="text-gray-500 text-sm text-center mt-4">No conversations yet. Go to Directory to start one!</p>
           ) : (
-            conversations.map((chat: any) => (
-              <div 
-                key={chat.id} 
+            conversations.map((chat) => (
+              <div
+                key={chat.id}
                 onClick={() => setActiveChat(chat.id)}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                  activeChat === chat.id ? 'bg-indigo-600/20 border border-indigo-500/30' : 'hover:bg-gray-800/50'
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${activeChat === chat.id ? 'bg-indigo-600/20 border border-indigo-500/30' : 'hover:bg-gray-800/50'
+                  }`}
               >
                 <div className="w-12 h-12 bg-gray-800 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-400 uppercase">
                   {chat.name ? chat.name[0] : '#'}
@@ -122,9 +138,9 @@ export default function Sidebar({ user, activeChat, setActiveChat }: SidebarProp
           allUsers.length === 0 ? (
             <p className="text-gray-500 text-sm text-center mt-4">No other users found.</p>
           ) : (
-            allUsers.map((u: any) => (
-              <div 
-                key={u.id} 
+            allUsers.map((u) => (
+              <div
+                key={u.id}
                 onClick={() => startChat(u)}
                 className="flex items-center justify-between p-3 rounded-xl cursor-pointer hover:bg-gray-800/50 transition-colors"
               >

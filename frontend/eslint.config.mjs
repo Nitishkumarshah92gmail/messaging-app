@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // New strict rule from eslint-plugin-react-hooks: flags standard
+      // data-fetching effects (setState after async calls). Kept as a
+      // warning to avoid risky refactors of working code.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;
